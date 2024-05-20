@@ -52,9 +52,11 @@ document.addEventListener('DOMContentLoaded', function () {
         ])
             .then(([opportunitiesData, positionDetailsData]) => {
                 data = opportunitiesData;
-                detailsData = positionDetailsData;
+                detailsData = positionDetailsData.map(detail => {
+                    const opportunity = data.find(op => op.id === detail.id);
+                    return { ...detail, mitra_id: opportunity ? opportunity.mitra_id : null };
+                });
                 filteredData = data;
-                dataCountElement.textContent = data.length;
                 displayData(true);
             })
             .catch(error => console.error('Error loading the data:', error));
@@ -105,14 +107,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showModal(detail, logoSrc) {
-        console.log('Modal should display now');
         modalContent.innerHTML = `
             <div class="row">
                 <div class="left-column">
                     <img src="${logoSrc}" alt="${detail.mitra_brand_name}">
                     <h2>${detail.name}</h2>
                     <p>${detail.additional_title}</p>
-                    <p>${detail.id}</p>
+                    <!-- Link with mitra_id and id -->
+                    <p><a href="https://kampusmerdeka.kemdikbud.go.id/program/magang/browse/${detail.mitra_id}/${detail.id}" target="_blank">Go to MSIB page</a></p>
                     <p><strong>Start Duration:</strong> ${new Date(detail.activity_details.start_duration).toLocaleDateString()}</p>
                     <p><strong>End Duration:</strong> ${new Date(detail.activity_details.end_duration).toLocaleDateString()}</p>
                     <p><strong>Location:</strong> ${detail.activity_details.location}</p>
