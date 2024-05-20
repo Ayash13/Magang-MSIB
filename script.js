@@ -1,26 +1,22 @@
-let currentDataIndex = 0;
-const increment = 50;
-let data = [];
-let detailsData = [];
-let filteredData = [];
-
 document.addEventListener('DOMContentLoaded', function () {
     const loadMoreBtn = document.getElementById('load-more');
     const searchInput = document.getElementById('search-input');
     const dataCountElement = document.getElementById('data-count');
-
-    // Modal elements
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-body');
     const closeModalBtn = document.getElementsByClassName('close-btn')[0];
 
+    let currentDataIndex = 0;
+    const increment = 50;
+    let data = [];
+    let detailsData = [];
+    let filteredData = [];
+
     searchInput.addEventListener('input', function () {
         const searchTerm = this.value.toLowerCase();
         filteredData = data.filter(opportunity => {
-            return opportunity.name.toLowerCase().includes(searchTerm) ||
-                opportunity.location.toLowerCase().includes(searchTerm) ||
-                opportunity.mitra_name.toLowerCase().includes(searchTerm) ||
-                opportunity.mitra_brand_name.toLowerCase().includes(searchTerm);
+            const details = detailsData.find(detail => detail.id === opportunity.id) || {};
+            return isMatch(opportunity, searchTerm) || isMatch(details, searchTerm);
         });
         currentDataIndex = 0;
         displayData(true);
@@ -28,12 +24,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     closeModalBtn.onclick = function () {
         modal.style.display = "none";
-    }
+    };
 
     window.onclick = function (event) {
-        if (event.target == modal) {
+        if (event.target === modal) {
             modal.style.display = "none";
         }
+    };
+
+    function isMatch(item, searchTerm) {
+        for (let key in item) {
+            if (typeof item[key] === 'string' && item[key].toLowerCase().includes(searchTerm)) {
+                return true;
+            } else if (typeof item[key] === 'object') {
+                if (isMatch(item[key], searchTerm)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     function loadData() {
@@ -51,20 +60,11 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(error => console.error('Error loading the data:', error));
     }
 
-    function formatTitle(title) {
-        const words = title.split(' ');
-        if (words.length > 3) {
-            return words.slice(0, 3).join(' ') + '<br>' + words.slice(3).join(' ');
-        }
-        return title;
-    }
-
     function displayData(reset = false) {
         const container = document.getElementById('data-container');
         if (reset) container.innerHTML = '';
         const endIndex = Math.min(currentDataIndex + increment, filteredData.length);
-        for (let i = currentDataIndex; i < endIndex; i++) {
-            const opportunity = filteredData[i];
+        filteredData.slice(currentDataIndex, endIndex).forEach(opportunity => {
             const formattedTitle = formatTitle(opportunity.name);
             const cardHTML = `
                 <div class="card" data-id="${opportunity.id}">
@@ -79,28 +79,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             `;
             container.innerHTML += cardHTML;
-        }
+        });
 
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
+        addCardEventListeners();
+        currentDataIndex += increment;
+        loadMoreBtn.style.display = currentDataIndex >= filteredData.length ? 'none' : 'block';
+    }
+
+    function addCardEventListeners() {
+        document.querySelectorAll('.card').forEach(card => {
             card.addEventListener('click', function () {
                 const id = this.getAttribute('data-id');
                 const detail = detailsData.find(d => d.id === id);
                 if (detail) {
+                    console.log('Showing modal for:', detail);
                     showModal(detail, this.querySelector('img').src);
                 }
             });
         });
+    }
 
-        currentDataIndex += increment;
-        if (currentDataIndex >= filteredData.length) {
-            loadMoreBtn.style.display = 'none';
-        } else {
-            loadMoreBtn.style.display = 'block';
-        }
+    function formatTitle(title) {
+        const words = title.split(' ');
+        return words.length > 3 ? words.slice(0, 3).join(' ') + '<br>' + words.slice(3).join(' ') : title;
     }
 
     function showModal(detail, logoSrc) {
+        console.log('Modal should display now');
         modalContent.innerHTML = `
             <div class="row">
                 <div class="left-column">
@@ -128,8 +133,6 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.style.display = "block";
     }
 
-
     loadMoreBtn.addEventListener('click', () => displayData());
-
     loadData();
 });
