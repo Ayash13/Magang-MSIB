@@ -57,10 +57,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     return { ...detail, mitra_id: opportunity ? opportunity.mitra_id : null };
                 });
                 filteredData = data;
+                updateDataCount(data.length); // Update count after data is loaded
                 displayData(true);
             })
             .catch(error => console.error('Error loading the data:', error));
     }
+
+    function updateDataCount(count) {
+        const dataCountElement = document.getElementById('data-count');
+        dataCountElement.textContent = count;
+    }
+
 
     function displayData(reset = false) {
         const container = document.getElementById('data-container');
