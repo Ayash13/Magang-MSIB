@@ -45,6 +45,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return false;
     }
 
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+
     function loadData() {
         Promise.all([
             fetch('data/opportunities.json').then(response => response.json()),
@@ -52,16 +60,18 @@ document.addEventListener('DOMContentLoaded', function () {
         ])
             .then(([opportunitiesData, positionDetailsData]) => {
                 data = opportunitiesData;
+                shuffleArray(data);
                 detailsData = positionDetailsData.map(detail => {
                     const opportunity = data.find(op => op.id === detail.id);
                     return { ...detail, mitra_id: opportunity ? opportunity.mitra_id : null };
                 });
                 filteredData = data;
-                updateDataCount(data.length); // Update count after data is loaded
+                updateDataCount(data.length);
                 displayData(true);
             })
             .catch(error => console.error('Error loading the data:', error));
     }
+
 
     function updateDataCount(count) {
         const dataCountElement = document.getElementById('data-count');
