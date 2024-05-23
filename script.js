@@ -54,8 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function loadData() {
-        // Show the loading spinner
-        document.getElementById('loading-spinner').style.display = 'flex';
+        document.getElementById('loading-spinner').style.display = 'flex'; // Show spinner
 
         Promise.all([
             fetch('data/opportunities.json').then(response => response.json()),
@@ -76,10 +75,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error loading the data:', error);
             })
             .finally(() => {
-                // Hide the loading spinner once data is fully loaded
-                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('loading-spinner').style.display = 'none'; // Hide spinner
             });
     }
+
 
     function displayData(reset = false) {
         const container = document.getElementById('data-container');

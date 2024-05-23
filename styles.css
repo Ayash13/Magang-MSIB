@@ -262,10 +262,26 @@ body {
 }
 
 .loading-spinner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  font-size: 2rem;
-  color: #007bff; /* Use a theme color that fits your design */
+  background-color: rgba(255, 255, 255, 0.8);
+  z-index: 1050;
+  color: #007bff;
+  font-size: 3rem;
+}
+
+.fas.fa-spinner.fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }
