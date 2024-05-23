@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function loadData() {
+        // Show the loading spinner
+        document.getElementById('loading-spinner').style.display = 'flex';
+
         Promise.all([
             fetch('data/opportunities.json').then(response => response.json()),
             fetch('data/position_details.json').then(response => response.json())
@@ -69,7 +72,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateDataCount(data.length);
                 displayData(true);
             })
-            .catch(error => console.error('Error loading the data:', error));
+            .catch(error => {
+                console.error('Error loading the data:', error);
+            })
+            .finally(() => {
+                // Hide the loading spinner once data is fully loaded
+                document.getElementById('loading-spinner').style.display = 'none';
+            });
+    }
+
+    function displayData(reset = false) {
+        const container = document.getElementById('data-container');
+        if (reset) container.innerHTML = '';
+        const endIndex = Math.min(currentDataIndex + increment, filteredData.length);
+        filteredData.slice(currentDataIndex, endIndex).forEach(opportunity => {
+            const formattedTitle = formatTitle(opportunity.name);
+            const cardHTML = `
+                <div class="card" data-id="${opportunity.id}">
+                    <img src="${opportunity.logo}" alt="${opportunity.mitra_brand_name}">
+                    <div class="card-content">
+                        <div class="card-title">${formattedTitle}</div>
+                        <div class="card-text"><strong>Partner:</strong> ${opportunity.mitra_brand_name}</div>
+                        <div class="card-text"><strong>Location:</strong> ${opportunity.location}</div>
+                        <div class="card-text"><strong>Duration:</strong> ${opportunity.months_duration} Month • MSIB</div>
+                    </div>
+                    <div class="badges">${opportunity.activity_type}</div>
+                </div>
+            `;
+            container.innerHTML += cardHTML;
+        });
+
+        addCardEventListeners();
+        currentDataIndex += increment;
+        loadMoreBtn.style.display = currentDataIndex >= filteredData.length ? 'none' : 'block';
     }
 
 
