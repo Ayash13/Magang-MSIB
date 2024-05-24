@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('detail-modal');
     const modalContent = document.getElementById('modal-body');
     const closeModalBtn = document.getElementsByClassName('close-btn')[0];
+    const allTab = document.getElementById('all-tab');
+    const favoritesTab = document.getElementById('favorites-tab');
+    const dataContainer = document.getElementById('data-container');
+    const favoritesContainer = document.getElementById('favorites-container');
 
     let currentDataIndex = 0;
     const increment = 50;
@@ -32,6 +36,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+    allTab.onclick = function () {
+        toggleView('all');
+    };
+
+    favoritesTab.onclick = function () {
+        toggleView('favorites');
+    };
+
     function isMatch(item, searchTerm) {
         for (let key in item) {
             if (typeof item[key] === 'string' && item[key].toLowerCase().includes(searchTerm)) {
@@ -51,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function () {
             [array[i], array[j]] = [array[j], array[i]];
         }
     }
-
 
     function loadData() {
         document.getElementById('loading-spinner').style.display = 'flex'; // Show spinner
@@ -79,45 +90,46 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-
-    function displayData(reset = false) {
-        const container = document.getElementById('data-container');
-        if (reset) container.innerHTML = '';
-        const endIndex = Math.min(currentDataIndex + increment, filteredData.length);
-        filteredData.slice(currentDataIndex, endIndex).forEach(opportunity => {
-            const formattedTitle = formatTitle(opportunity.name);
-            const cardHTML = `
-                <div class="card" data-id="${opportunity.id}">
-                    <img src="${opportunity.logo}" alt="${opportunity.mitra_brand_name}">
-                    <div class="card-content">
-                        <div class="card-title">${formattedTitle}</div>
-                        <div class="card-text"><strong>Partner:</strong> ${opportunity.mitra_brand_name}</div>
-                        <div class="card-text"><strong>Location:</strong> ${opportunity.location}</div>
-                        <div class="card-text"><strong>Duration:</strong> ${opportunity.months_duration} Month • MSIB</div>
-                    </div>
-                    <div class="badges">${opportunity.activity_type}</div>
-                </div>
-            `;
-            container.innerHTML += cardHTML;
-        });
-
-        addCardEventListeners();
-        currentDataIndex += increment;
-        loadMoreBtn.style.display = currentDataIndex >= filteredData.length ? 'none' : 'block';
-    }
-
-
     function updateDataCount(count) {
         const dataCountElement = document.getElementById('data-count');
         dataCountElement.textContent = count;
     }
 
-
     function displayData(reset = false) {
         const container = document.getElementById('data-container');
         if (reset) container.innerHTML = '';
         const endIndex = Math.min(currentDataIndex + increment, filteredData.length);
+        const favorites = loadFavorites();
         filteredData.slice(currentDataIndex, endIndex).forEach(opportunity => {
+            const formattedTitle = formatTitle(opportunity.name);
+            const isFavorite = favorites.includes(opportunity.id);
+            const cardHTML = `
+                <div class="card" data-id="${opportunity.id}">
+                    <img src="${opportunity.logo}" alt="${opportunity.mitra_brand_name}">
+                    <div class="card-content">
+                        <div class="card-title">${formattedTitle}</div>
+                        <div class="card-text"><strong>Partner:</strong> ${opportunity.mitra_brand_name}</div>
+                        <div class="card-text"><strong>Location:</strong> ${opportunity.location}</div>
+                        <div class="card-text"><strong>Duration:</strong> ${opportunity.months_duration} Month • MSIB</div>
+                    </div>
+                    <div class="badges">${opportunity.activity_type}</div>
+                    <button class="favorite-btn ${isFavorite ? 'active' : ''}"><i class="fas fa-heart"></i></button>
+                </div>
+            `;
+            container.innerHTML += cardHTML;
+        });
+
+        addCardEventListeners();
+        currentDataIndex += increment;
+        loadMoreBtn.style.display = currentDataIndex >= filteredData.length ? 'none' : 'block';
+    }
+
+    function displayFavorites() {
+        const container = document.getElementById('favorites-container');
+        container.innerHTML = '';
+        const favorites = loadFavorites();
+        const favoriteData = data.filter(opportunity => favorites.includes(opportunity.id));
+        favoriteData.forEach(opportunity => {
             const formattedTitle = formatTitle(opportunity.name);
             const cardHTML = `
                 <div class="card" data-id="${opportunity.id}">
@@ -129,27 +141,62 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="card-text"><strong>Duration:</strong> ${opportunity.months_duration} Month • MSIB</div>
                     </div>
                     <div class="badges">${opportunity.activity_type}</div>
+                    <button class="favorite-btn active"><i class="fas fa-heart"></i></button>
                 </div>
             `;
             container.innerHTML += cardHTML;
         });
 
         addCardEventListeners();
-        currentDataIndex += increment;
-        loadMoreBtn.style.display = currentDataIndex >= filteredData.length ? 'none' : 'block';
+    }
+
+    function toggleView(view) {
+        if (view === 'favorites') {
+            displayFavorites();
+            favoritesContainer.style.display = 'grid';
+            dataContainer.style.display = 'none';
+            allTab.classList.remove('active');
+            favoritesTab.classList.add('active');
+        } else {
+            displayData(true);
+            favoritesContainer.style.display = 'none';
+            dataContainer.style.display = 'grid';
+            allTab.classList.add('active');
+            favoritesTab.classList.remove('active');
+        }
     }
 
     function addCardEventListeners() {
         document.querySelectorAll('.card').forEach(card => {
-            card.addEventListener('click', function () {
+            card.addEventListener('click', function (event) {
+                if (event.target.closest('.favorite-btn')) {
+                    toggleFavorite(event.target.closest('.favorite-btn'), this.getAttribute('data-id'));
+                    return;
+                }
+
                 const id = this.getAttribute('data-id');
                 const detail = detailsData.find(d => d.id === id);
                 if (detail) {
-                    console.log('Showing modal for:', detail);
                     showModal(detail, this.querySelector('img').src);
                 }
             });
         });
+    }
+
+    function toggleFavorite(button, id) {
+        const favorites = loadFavorites();
+        const index = favorites.indexOf(id);
+        if (index > -1) {
+            favorites.splice(index, 1);
+        } else {
+            favorites.push(id);
+        }
+        saveFavorites(favorites);
+        button.classList.toggle('active');
+
+        if (favoritesContainer.style.display === 'grid') {
+            displayFavorites();
+        }
     }
 
     function formatTitle(title) {
@@ -184,6 +231,15 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
         modal.style.display = "block";
+    }
+
+    function loadFavorites() {
+        const favorites = localStorage.getItem('favorites');
+        return favorites ? JSON.parse(favorites) : [];
+    }
+
+    function saveFavorites(favorites) {
+        localStorage.setItem('favorites', JSON.stringify(favorites));
     }
 
     loadMoreBtn.addEventListener('click', () => displayData());
